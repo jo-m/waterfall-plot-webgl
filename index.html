@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+		<title>Waterfall.js</title>
+
+		<link href='main.css' rel='stylesheet' type='text/css' />
+	</head>
+	<body>
+
+		<canvas></canvas>
+
+		<script id="vs" type="x-shader/vertex">
+			attribute vec3 vertex;
+
+			uniform mat4 vertex_model_to_world;
+			uniform mat4 vertex_world_to_clip;
+
+			uniform float delta_time;
+			uniform float line_offset;
+
+			void main() {
+				float offset = line_offset + delta_time;
+				gl_Position = vertex_world_to_clip * vertex_model_to_world * vec4(vertex.x, vertex.y, -offset, 1.0);
+			}
+		</script>
+
+		<script id="fs" type="x-shader/fragment">
+			void main() {
+				gl_FragColor = vec4( 1, 1, 1, 1.0 );
+			}
+		</script>
+
+		<script src="js/gl-matrix-min.js"></script>
+		<script src="js/camera.js"></script>
+		<script src="js/webgl-helpers.js"></script>
+		<script src="js/waterfall.js"></script>
+		<script src="js/main.js"></script>
+	</body>
+</html>
