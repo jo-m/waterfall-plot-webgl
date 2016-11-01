@@ -10,7 +10,8 @@ class Waterfall {
             max_freq_hz     : 5000,
 
             color_line      : [1, 1, 1],
-            color_stripe    : [0, 0, 0]
+            color_stripe    : [0, 0, 0],
+            line_width      : 1.5
         };
 
         this.parameters = {
@@ -25,19 +26,17 @@ class Waterfall {
         };
 
         this.uniforms = {
-            color                : null,
-            time_offset          : null,
-            line_offset          : null,
-            vertex_model_to_world: null,
-            vertex_world_to_clip : null
+            uniform: null,
+            varying: null
         };
-
+        this.shader_uniform = null;
+        this.shader_varying = null;
         this.init_webgl();
 
         this.camera = null;
         this.world_matrix = null;
         this.init_camera_world();
-        
+
         this.audio = null;
         this.init_audio();
 
@@ -64,16 +63,26 @@ class Waterfall {
 
         // load and compile shaders
         let vertex_shader = document.getElementById('vs').textContent;
-        let fragment_shader = document.getElementById('fs').textContent;
-        this.shader = WebGLHelpers.create_program(this.gl, vertex_shader, fragment_shader);
+        this.shader_uniform = WebGLHelpers.create_program(this.gl, vertex_shader,
+            document.getElementById('fs-uniform-color').textContent);
+        this.shader_varying = WebGLHelpers.create_program(this.gl, vertex_shader,
+            document.getElementById('fs-varying-color').textContent);
 
         // uniforms
         this.uniforms = {
-            color: this.gl.getUniformLocation(this.shader, 'color'),
-            time_offset: this.gl.getUniformLocation(this.shader, 'time_offset'),
-            line_offset: this.gl.getUniformLocation(this.shader, 'line_offset'),
-            vertex_model_to_world: this.gl.getUniformLocation(this.shader, 'vertex_model_to_world'),
-            vertex_world_to_clip: this.gl.getUniformLocation(this.shader, 'vertex_world_to_clip')
+            uniform: {
+                color: this.gl.getUniformLocation(this.shader_uniform, 'color'),
+                time_offset: this.gl.getUniformLocation(this.shader_uniform, 'time_offset'),
+                line_offset: this.gl.getUniformLocation(this.shader_uniform, 'line_offset'),
+                vertex_model_to_world: this.gl.getUniformLocation(this.shader_uniform, 'vertex_model_to_world'),
+                vertex_world_to_clip: this.gl.getUniformLocation(this.shader_uniform, 'vertex_world_to_clip')
+            },
+            varying: {
+                time_offset: this.gl.getUniformLocation(this.shader_varying, 'time_offset'),
+                line_offset: this.gl.getUniformLocation(this.shader_varying, 'line_offset'),
+                vertex_model_to_world: this.gl.getUniformLocation(this.shader_varying, 'vertex_model_to_world'),
+                vertex_world_to_clip: this.gl.getUniformLocation(this.shader_varying, 'vertex_world_to_clip')
+            }
         };
     }
 
@@ -167,7 +176,7 @@ class Waterfall {
 
     loop_main() {
         if(this.should_insert_new_line()) {
-            this.insert_new_line();    
+            this.insert_new_line();
         }
         this.resize_canvas();
         this.render();
@@ -175,40 +184,53 @@ class Waterfall {
     }
 
     render() {
-        if (!this.shader) return;
-
-        // clear screen
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-        // load shader into GPU
-        this.gl.useProgram(this.shader);
-
-        // set uniforms
         const time_offset = this.parameters.delta_time / (1000 / this.config.new_line_freq_hz) / this.config.n_lines;
-        this.gl.uniform1f(this.uniforms.time_offset, time_offset);
-        this.gl.uniformMatrix4fv(this.uniforms.vertex_model_to_world, false, this.world_matrix);
-        this.gl.uniformMatrix4fv(this.uniforms.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
 
-        // render stripes and lines
         for(let i = this.buffers.length - 1; i >= 0; i--) {
-            let b = this.buffers[i];
-
-            this.gl.uniform1f(this.uniforms.line_offset, i / this.config.n_lines);
-            let vertex_position = null;
-
-            this.gl.uniform3fv(this.uniforms.color, this.config.color_stripe);
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, b.stripe);
-            this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
-            this.gl.enableVertexAttribArray(vertex_position);
-            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.parameters.stripe_buffer_length);
-            this.gl.disableVertexAttribArray(vertex_position);
-
-            this.gl.uniform3fv(this.uniforms.color, this.config.color_line);
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, b.line);
-            this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
-            this.gl.enableVertexAttribArray(vertex_position);
-            this.gl.drawArrays(this.gl.LINE_STRIP, 0, this.parameters.line_buffer_length);
-            this.gl.disableVertexAttribArray(vertex_position);
+            const b = this.buffers[i];
+            this.render_stripe(i, b.stripe, time_offset);
+            this.render_line(i, b.line, time_offset);
         }
+    }
+
+    render_line(i, line_buffer, time_offset) {
+        const shader = this.shader_uniform;
+        if (!shader) return;
+        let vertex_position = null;
+
+        this.gl.lineWidth(this.config.line_width);
+
+        this.gl.useProgram(shader);
+        this.gl.uniform1f(this.uniforms.uniform.time_offset, time_offset);
+        this.gl.uniformMatrix4fv(this.uniforms.uniform.vertex_model_to_world, false, this.world_matrix);
+        this.gl.uniformMatrix4fv(this.uniforms.uniform.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
+        this.gl.uniform1f(this.uniforms.uniform.line_offset, i / this.config.n_lines);
+        this.gl.uniform3fv(this.uniforms.uniform.color, this.config.color_line);
+
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, line_buffer);
+        this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(vertex_position);
+        this.gl.drawArrays(this.gl.LINE_STRIP, 0, this.parameters.line_buffer_length);
+        this.gl.disableVertexAttribArray(vertex_position);
+    }
+
+    render_stripe(i, stripe_buffer, time_offset) {
+        const shader = this.shader_varying;
+        if (!shader) return;
+        let vertex_position = null;
+
+        this.gl.useProgram(shader);
+        this.gl.uniform1f(this.uniforms.varying.time_offset, time_offset);
+        this.gl.uniformMatrix4fv(this.uniforms.varying.vertex_model_to_world, false, this.world_matrix);
+        this.gl.uniformMatrix4fv(this.uniforms.varying.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
+        this.gl.uniform1f(this.uniforms.varying.line_offset, i / this.config.n_lines);
+
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, stripe_buffer);
+        this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
+        this.gl.enableVertexAttribArray(vertex_position);
+        this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.parameters.stripe_buffer_length);
+        this.gl.disableVertexAttribArray(vertex_position);
     }
 }

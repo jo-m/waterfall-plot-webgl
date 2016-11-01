@@ -20,14 +20,37 @@
 			uniform float time_offset;
 			uniform float line_offset;
 
+			varying vec2 vertex_2d;
+			varying float offset;
+
 			void main() {
-				float offset = line_offset + time_offset;
+				vertex_2d = vertex.xy;
+				offset = line_offset + time_offset;
 				gl_Position = vertex_world_to_clip * vertex_model_to_world * vec4(vertex.x, vertex.y, -offset, 1.0);
 			}
 		</script>
 
-		<script id="fs" type="x-shader/fragment">
+		<script id="fs-varying-color" type="x-shader/fragment">
+			varying vec2 vertex_2d;
+			varying float offset;
+
+			vec3 hsv2rgb(vec3 c) {
+				vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+				vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+				return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+			}
+
+			void main() {
+				vec3 hsv = vec3(vertex_2d.y * 1.2, 1, 1.0 - offset * 0.6);
+				hsv = min(hsv, vec3(1, 1, 1));
+				gl_FragColor = vec4(hsv2rgb(hsv), 1.0);
+			}
+		</script>
+
+		<script id="fs-uniform-color" type="x-shader/fragment">
 			uniform vec3 color;
+
+			varying vec2 vertex_2d;
 
 			void main() {
 				gl_FragColor = vec4(color, 1.0);
