@@ -11,12 +11,12 @@ class Waterfall {
 
             render_line     : true,
             line_use_uniform_shader: true,
-            color_line      : [1, 1, 1],
+            line_color      : [1, 1, 1],
             line_width      : 1.5,
 
             render_stripe   : true,
             stripe_use_uniform_shader: true,
-            color_stripe    : [0, 0, 0]
+            stripe_color    : [0, 0, 0]
         };
 
         this.parameters = {
@@ -36,6 +36,7 @@ class Waterfall {
         };
         this.shader_uniform = null;
         this.shader_varying = null;
+        this.buffers = [];
         this.init_webgl();
 
         this.camera = null;
@@ -45,7 +46,80 @@ class Waterfall {
         this.audio = null;
         this.init_audio();
 
-        this.buffers = [];
+        document.onkeypress = this.key_pressed.bind(this);
+    }
+
+    key_pressed(event) {
+        event = event || window.event;
+        const code = event.keyCode || event.which;
+        const char = String.fromCharCode(code);
+
+        const line = (color) => {
+            this.config.line_use_uniform_shader = true;
+            this.config.line_color = color;
+        };
+
+        const stripe = (color) => {
+            this.config.stripe_use_uniform_shader = true;
+            this.config.stripe_color = color;
+        };
+
+        const options = {
+            // line
+            'q': () => this.config.render_line = !this.config.render_line,
+            'w': () => this.config.line_use_uniform_shader = false,
+            'e': () => line([0, 0, 0]),
+            'r': () => line([1, 1, 1]),
+            't': () => line([0.5, 0.5, 0.5]),
+            'y': () => line([1, 0, 0]),
+            'u': () => line([0, 0, 1]),
+
+            '1': () => this.config.line_width = 0.5,
+            '2': () => this.config.line_width = 1.0,
+            '3': () => this.config.line_width = 1.5,
+            '4': () => this.config.line_width = 2.0,
+
+            // stripe
+            'a': () => this.config.render_stripe = !this.config.render_stripe,
+            's': () => this.config.stripe_use_uniform_shader = false,
+            'd': () => stripe([0, 0, 0]),
+            'f': () => stripe([1, 1, 1]),
+            'g': () => stripe([0.5, 0.5, 0.5]),
+            'h': () => stripe([1, 0, 0]),
+            'j': () => stripe([0, 0, 1]),
+
+            // defaults
+            'z': () => {
+                this.config.render_stripe = this.config.render_line = true;
+                this.config.stripe_use_uniform_shader = true;
+                this.config.line_use_uniform_shader = true;
+                this.config.stripe_color = [0, 0, 0];
+                this.config.line_color = [1, 1, 1];
+                this.config.line_width = 1.5;
+            },
+            'x': () => {
+                this.config.render_stripe = this.config.render_line = true;
+                this.config.stripe_use_uniform_shader = false;
+                this.config.line_use_uniform_shader = true;
+                this.config.line_color = [1, 1, 1];
+                this.config.line_width = 2;
+            },
+            'c': () => {
+                this.config.render_stripe = this.config.render_line = true;
+                this.config.stripe_use_uniform_shader = false;
+                this.config.line_use_uniform_shader = true;
+                this.config.line_color = [0, 0, 0];
+                this.config.line_width = 1;
+            },
+            'v': () => {
+                this.config.render_stripe = true;
+                this.config.render_line = false;
+                this.config.stripe_use_uniform_shader = false;
+            }
+        };
+
+        if(options[char] !== undefined)
+            options[char]();
     }
 
     init_audio() {
@@ -216,7 +290,7 @@ class Waterfall {
         this.gl.uniformMatrix4fv(uniforms.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
         this.gl.uniform1f(uniforms.line_offset, line_offset);
         if(this.config.line_use_uniform_shader)
-            this.gl.uniform3fv(uniforms.color, this.config.color_line);
+            this.gl.uniform3fv(uniforms.color, this.config.line_color);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, line_buffer);
         this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
@@ -237,7 +311,7 @@ class Waterfall {
         this.gl.uniformMatrix4fv(uniforms.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
         this.gl.uniform1f(uniforms.line_offset, line_offset);
         if(this.config.stripe_use_uniform_shader)
-            this.gl.uniform3fv(uniforms.color, this.config.color_stripe);
+            this.gl.uniform3fv(uniforms.color, this.config.stripe_color);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, stripe_buffer);
         this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
