@@ -18,7 +18,9 @@ class Waterfall {
 
             render_stripe   : true,
             stripe_use_uniform_shader: true,
-            stripe_color    : [0, 0, 0]
+            stripe_color    : [0, 0, 0],
+
+            camera_angle_y  : 0
         };
 
         this.parameters = {
@@ -181,12 +183,12 @@ class Waterfall {
 
     init_camera_world() {
         this.camera = new Camera(Math.PI / 4, 1, 0, 1000);
-        this.camera.translate([0, 2, 3]);
+        this.camera.translate([Math.sin(this.config.camera_angle_y) * 3, 2, Math.cos(this.config.camera_angle_y) * 3]);
         this.camera.look_at([0, 0, 0], [0, 10, 0]);
 
         this.world_matrix = mat4.create();
-        mat4.fromScaling(this.world_matrix, [6, 1, 6]);
-        mat4.translate(this.world_matrix, this.world_matrix, [-0.5, -1, 0]);
+        mat4.fromScaling(this.world_matrix, [5, 1, 5]);
+        mat4.translate(this.world_matrix, this.world_matrix, [-0.5, -2, 0]);
     }
 
     resize_canvas(event) {
