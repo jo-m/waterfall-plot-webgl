@@ -10,25 +10,26 @@ class Waterfall {
             max_freq_hz     : 5000,
 
             color_line      : [1, 1, 1],
-            color_shape     : [0, 0, 0]
+            color_stripe    : [0, 0, 0]
         };
 
         this.parameters = {
             last_line_inserted_time: new Date().getTime(),
-            time         : null,
-            delta_time: null,
-            screen_width : null,
-            screen_height: null,
-            audioDataSize: null,
-            line_buffer_length: null
+            time                : null,
+            delta_time          : null,
+            screen_width        : null,
+            screen_height       : null,
+            audioDataSize       : null,
+            line_buffer_length  : null,
+            stripe_buffer_length: null
         };
 
         this.uniforms = {
-            color: null,
-            delta_time: null,
-            line_offset: null,
+            color                : null,
+            delta_time           : null,
+            line_offset          : null,
             vertex_model_to_world: null,
-            vertex_world_to_clip: null
+            vertex_world_to_clip : null
         };
 
         this.init_webgl();
@@ -47,7 +48,8 @@ class Waterfall {
         this.audio = new Audio(this.config.fft_size, this.config.min_freq_hz, this.config.max_freq_hz);
         this.audio.init();
         this.parameters.audioDataSize = this.audio.get_audio_data_size();
-        this.parameters.line_buffer_length = this.parameters.audioDataSize + 2;
+        this.parameters.line_buffer_length = this.parameters.audioDataSize;
+        this.parameters.stripe_buffer_length = this.parameters.audioDataSize * 2;
     }
 
     init_webgl() {
@@ -101,20 +103,29 @@ class Waterfall {
     }
 
     create_line_buffer(data) {
-        if(this.parameters.line_buffer_length != data.length + 2) {
-            alert("Error: Unexpected data buffer length");
-            return;
-        }
         let points = new Float32Array((this.parameters.line_buffer_length) * 2);
 
-        points[0] = 0;
-        points[1] = 0;
         data.forEach((v, i) => {
-            points[i * 2 + 2] = i / data.length;
-            points[i * 2 + 1 + 2] = v / 255;
+            points[i * 2] = i / data.length;
+            points[i * 2 + 1] = v / 255;
         });
-        points[points.length - 2] = 1;
-        points[points.length - 1] = 0;
+
+        let buffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, points, this.gl.STATIC_DRAW);
+
+        return buffer;
+    }
+
+    create_stripe_buffer(data) {
+        let points = new Float32Array((this.parameters.stripe_buffer_length) * 2);
+
+        data.forEach((v, i) => {
+            points[i * 4] = i / data.length;
+            points[i * 4 + 1] = v / 255;
+            points[i * 4 + 2] = i / data.length;
+            points[i * 4 + 3] = 0;
+        });
 
         let buffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
@@ -143,12 +154,14 @@ class Waterfall {
         }
 
         let data = this.audio.get_current_audio_data();
-        let buffer = this.create_line_buffer(data);
-        this.buffers.unshift(buffer);
+        let line_buffer = this.create_line_buffer(data);
+        let stripe_buffer = this.create_stripe_buffer(data);
+        this.buffers.unshift({line: line_buffer, stripe: stripe_buffer});
 
         if(this.buffers.length > this.config.n_lines) {
-            let old_buffer = this.buffers.pop();
-            this.gl.deleteBuffer(old_buffer);
+            let old = this.buffers.pop();
+            this.gl.deleteBuffer(old.line);
+            this.gl.deleteBuffer(old.stripe);
         }
     }
 
@@ -171,21 +184,30 @@ class Waterfall {
         this.gl.useProgram(this.shader);
 
         // set uniforms
-        this.gl.uniform3fv(this.uniforms.color, this.config.color_line);
         this.gl.uniform1f(this.uniforms.delta_time, this.parameters.delta_time / 1000 / this.config.n_lines);
         this.gl.uniformMatrix4fv(this.uniforms.vertex_model_to_world, false, this.world_matrix);
         this.gl.uniformMatrix4fv(this.uniforms.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
 
-        // render lines
-        this.buffers.forEach((b, i) => {
-            this.gl.uniform1f(this.uniforms.line_offset, i / this.config.n_lines);
+        // render stripes and lines
+        for(let i = this.buffers.length - 1; i >= 0; i--) {
+            let b = this.buffers[i];
 
-            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, b);
+            this.gl.uniform1f(this.uniforms.line_offset, i / this.config.n_lines);
             let vertex_position = null;
+
+            this.gl.uniform3fv(this.uniforms.color, this.config.color_stripe);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, b.stripe);
+            this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
+            this.gl.enableVertexAttribArray(vertex_position);
+            this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.parameters.stripe_buffer_length);
+            this.gl.disableVertexAttribArray(vertex_position);
+
+            this.gl.uniform3fv(this.uniforms.color, this.config.color_line);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, b.line);
             this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(vertex_position);
             this.gl.drawArrays(this.gl.LINE_STRIP, 0, this.parameters.line_buffer_length);
             this.gl.disableVertexAttribArray(vertex_position);
-        });
+        }
     }
 }
