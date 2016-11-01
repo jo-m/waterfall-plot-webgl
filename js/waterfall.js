@@ -190,12 +190,13 @@ class Waterfall {
 
         for(let i = this.buffers.length - 1; i >= 0; i--) {
             const b = this.buffers[i];
-            this.render_stripe(i, b.stripe, time_offset);
-            this.render_line(i, b.line, time_offset);
+            const time_offset_ = i === 0 ? 1 / this.config.n_lines : time_offset;
+            this.render_stripe(b.stripe, time_offset_, i / this.config.n_lines);
+            this.render_line(b.line, time_offset_, i / this.config.n_lines);
         }
     }
 
-    render_line(i, line_buffer, time_offset) {
+    render_line(line_buffer, time_offset, line_offset) {
         const shader = this.shader_uniform;
         if (!shader) return;
         let vertex_position = null;
@@ -206,7 +207,7 @@ class Waterfall {
         this.gl.uniform1f(this.uniforms.uniform.time_offset, time_offset);
         this.gl.uniformMatrix4fv(this.uniforms.uniform.vertex_model_to_world, false, this.world_matrix);
         this.gl.uniformMatrix4fv(this.uniforms.uniform.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
-        this.gl.uniform1f(this.uniforms.uniform.line_offset, i / this.config.n_lines);
+        this.gl.uniform1f(this.uniforms.uniform.line_offset, line_offset);
         this.gl.uniform3fv(this.uniforms.uniform.color, this.config.color_line);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, line_buffer);
@@ -216,7 +217,7 @@ class Waterfall {
         this.gl.disableVertexAttribArray(vertex_position);
     }
 
-    render_stripe(i, stripe_buffer, time_offset) {
+    render_stripe(stripe_buffer, time_offset, line_offset) {
         const shader = this.shader_varying;
         if (!shader) return;
         let vertex_position = null;
@@ -225,7 +226,7 @@ class Waterfall {
         this.gl.uniform1f(this.uniforms.varying.time_offset, time_offset);
         this.gl.uniformMatrix4fv(this.uniforms.varying.vertex_model_to_world, false, this.world_matrix);
         this.gl.uniformMatrix4fv(this.uniforms.varying.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
-        this.gl.uniform1f(this.uniforms.varying.line_offset, i / this.config.n_lines);
+        this.gl.uniform1f(this.uniforms.varying.line_offset, line_offset);
 
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, stripe_buffer);
         this.gl.vertexAttribPointer(vertex_position, 2, this.gl.FLOAT, false, 0, 0);
