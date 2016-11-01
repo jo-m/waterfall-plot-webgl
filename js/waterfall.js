@@ -5,9 +5,11 @@ class Waterfall {
             new_line_freq_hz:   15,
             speed           :    3,
 
-            fft_size        : 1024,
+            fft_size        : 512,
             min_freq_hz     :    0,
-            max_freq_hz     : 5000,
+            max_freq_hz     : 8000,
+
+            background_color:[0, 0, 0],
 
             render_line     : true,
             line_use_uniform_shader: true,
@@ -68,8 +70,8 @@ class Waterfall {
             // line
             'q': () => this.config.render_line = !this.config.render_line,
             'w': () => this.config.line_use_uniform_shader = false,
-            'e': () => line([0, 0, 0]),
-            'r': () => line([1, 1, 1]),
+            'e': () => line([1, 1, 1]),
+            'r': () => line([0, 0, 0]),
             't': () => line([0.5, 0.5, 0.5]),
             'y': () => line([1, 0, 0]),
             'u': () => line([0, 0, 1]),
@@ -96,13 +98,16 @@ class Waterfall {
                 this.config.stripe_color = [0, 0, 0];
                 this.config.line_color = [1, 1, 1];
                 this.config.line_width = 1.5;
+                this.config.background_color = [0, 0, 0];
             },
             'x': () => {
                 this.config.render_stripe = this.config.render_line = true;
-                this.config.stripe_use_uniform_shader = false;
+                this.config.stripe_use_uniform_shader = true;
                 this.config.line_use_uniform_shader = true;
-                this.config.line_color = [1, 1, 1];
-                this.config.line_width = 2;
+                this.config.stripe_color = [1, 1, 1];
+                this.config.line_color = [0, 0, 0];
+                this.config.line_width = 1.5;
+                this.config.background_color = [1, 1, 1];
             },
             'c': () => {
                 this.config.render_stripe = this.config.render_line = true;
@@ -110,11 +115,21 @@ class Waterfall {
                 this.config.line_use_uniform_shader = true;
                 this.config.line_color = [0, 0, 0];
                 this.config.line_width = 1;
+                this.config.background_color = [0, 0, 0];
             },
             'v': () => {
+                this.config.render_stripe = this.config.render_line = true;
+                this.config.stripe_use_uniform_shader = false;
+                this.config.line_use_uniform_shader = true;
+                this.config.line_color = [1, 1, 1];
+                this.config.line_width = 1.5;
+                this.config.background_color = [1, 1, 1];
+            },
+            'b': () => {
                 this.config.render_stripe = true;
                 this.config.render_line = false;
                 this.config.stripe_use_uniform_shader = false;
+                this.config.background_color = [0, 0, 0];
             }
         };
 
@@ -262,6 +277,8 @@ class Waterfall {
     }
 
     render() {
+        const [r, g, b] = this.config.background_color;
+        this.gl.clearColor(r, g, b, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
         const time_offset = this.parameters.delta_time / (1000 / this.config.new_line_freq_hz) / this.config.n_lines;
