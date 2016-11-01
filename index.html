@@ -17,11 +17,11 @@
 			uniform mat4 vertex_model_to_world;
 			uniform mat4 vertex_world_to_clip;
 
-			uniform float delta_time;
+			uniform float time_offset;
 			uniform float line_offset;
 
 			void main() {
-				float offset = line_offset + delta_time;
+				float offset = line_offset + time_offset;
 				gl_Position = vertex_world_to_clip * vertex_model_to_world * vec4(vertex.x, vertex.y, -offset, 1.0);
 			}
 		</script>

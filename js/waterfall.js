@@ -26,7 +26,7 @@ class Waterfall {
 
         this.uniforms = {
             color                : null,
-            delta_time           : null,
+            time_offset          : null,
             line_offset          : null,
             vertex_model_to_world: null,
             vertex_world_to_clip : null
@@ -70,7 +70,7 @@ class Waterfall {
         // uniforms
         this.uniforms = {
             color: this.gl.getUniformLocation(this.shader, 'color'),
-            delta_time: this.gl.getUniformLocation(this.shader, 'delta_time'),
+            time_offset: this.gl.getUniformLocation(this.shader, 'time_offset'),
             line_offset: this.gl.getUniformLocation(this.shader, 'line_offset'),
             vertex_model_to_world: this.gl.getUniformLocation(this.shader, 'vertex_model_to_world'),
             vertex_world_to_clip: this.gl.getUniformLocation(this.shader, 'vertex_world_to_clip')
@@ -153,9 +153,9 @@ class Waterfall {
             return;
         }
 
-        let data = this.audio.get_current_audio_data();
-        let line_buffer = this.create_line_buffer(data);
-        let stripe_buffer = this.create_stripe_buffer(data);
+        const data = this.audio.get_current_audio_data();
+        const line_buffer = this.create_line_buffer(data);
+        const stripe_buffer = this.create_stripe_buffer(data);
         this.buffers.unshift({line: line_buffer, stripe: stripe_buffer});
 
         if(this.buffers.length > this.config.n_lines) {
@@ -184,7 +184,8 @@ class Waterfall {
         this.gl.useProgram(this.shader);
 
         // set uniforms
-        this.gl.uniform1f(this.uniforms.delta_time, this.parameters.delta_time / 1000 / this.config.n_lines);
+        const time_offset = this.parameters.delta_time / (1000 / this.config.new_line_freq_hz) / this.config.n_lines;
+        this.gl.uniform1f(this.uniforms.time_offset, time_offset);
         this.gl.uniformMatrix4fv(this.uniforms.vertex_model_to_world, false, this.world_matrix);
         this.gl.uniformMatrix4fv(this.uniforms.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
 
