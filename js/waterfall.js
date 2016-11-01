@@ -62,11 +62,10 @@ class Waterfall {
         }
 
         // load and compile shaders
-        let vertex_shader = document.getElementById('vs').textContent;
-        this.shader_uniform = WebGLHelpers.create_program(this.gl, vertex_shader,
-            document.getElementById('fs-uniform-color').textContent);
-        this.shader_varying = WebGLHelpers.create_program(this.gl, vertex_shader,
-            document.getElementById('fs-varying-color').textContent);
+        this.shader_uniform = WebGLHelpers.create_program(this.gl, Shaders.vert.line,
+            Shaders.frag.line_uniform);
+        this.shader_varying = WebGLHelpers.create_program(this.gl, Shaders.vert.line,
+            Shaders.frag.line_hue);
 
         // uniforms
         this.uniforms = {
