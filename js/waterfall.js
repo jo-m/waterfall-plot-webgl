@@ -79,11 +79,11 @@ class Waterfall {
 
     init_camera_world() {
         this.camera = new Camera(Math.PI / 4, 1, 0, 1000);
-        this.camera.translate([0, 1, 4]);
-        this.camera.look_at([0, 0, 0], [0, 1, 0]);
+        this.camera.translate([0, 2, 3]);
+        this.camera.look_at([0, 0, 0], [0, 10, 0]);
 
         this.world_matrix = mat4.create();
-        mat4.fromScaling(this.world_matrix, [4, 1, 4]);
+        mat4.fromScaling(this.world_matrix, [6, 1, 6]);
         mat4.translate(this.world_matrix, this.world_matrix, [-0.5, -1, 0]);
     }
 
