@@ -1,12 +1,16 @@
 class Waterfall {
     constructor() {
         this.config = {
-            n_lines: 50,
-            new_line_freq_hz: 15,
-            speed: 3,
-            fft_size: 1024,
-            min_freq_hz: 0,
-            max_freq_hz: 5000
+            n_lines         :   50,
+            new_line_freq_hz:   15,
+            speed           :    3,
+
+            fft_size        : 1024,
+            min_freq_hz     :    0,
+            max_freq_hz     : 5000,
+
+            color_line      : [1, 1, 1],
+            color_shape     : [0, 0, 0]
         };
 
         this.parameters = {
@@ -20,6 +24,7 @@ class Waterfall {
         };
 
         this.uniforms = {
+            color: null,
             delta_time: null,
             line_offset: null,
             vertex_model_to_world: null,
@@ -62,6 +67,7 @@ class Waterfall {
 
         // uniforms
         this.uniforms = {
+            color: this.gl.getUniformLocation(this.shader, 'color'),
             delta_time: this.gl.getUniformLocation(this.shader, 'delta_time'),
             line_offset: this.gl.getUniformLocation(this.shader, 'line_offset'),
             vertex_model_to_world: this.gl.getUniformLocation(this.shader, 'vertex_model_to_world'),
@@ -165,6 +171,7 @@ class Waterfall {
         this.gl.useProgram(this.shader);
 
         // set uniforms
+        this.gl.uniform3fv(this.uniforms.color, this.config.color_line);
         this.gl.uniform1f(this.uniforms.delta_time, this.parameters.delta_time / 1000 / this.config.n_lines);
         this.gl.uniformMatrix4fv(this.uniforms.vertex_model_to_world, false, this.world_matrix);
         this.gl.uniformMatrix4fv(this.uniforms.vertex_world_to_clip, false, this.camera.get_world_to_clip_matrix());
