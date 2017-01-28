@@ -187,7 +187,7 @@ class Waterfall {
         this.camera.look_at([0, 0, 0], [0, 10, 0]);
 
         this.world_matrix = mat4.create();
-        mat4.fromScaling(this.world_matrix, [5, 1, 5]);
+        mat4.fromScaling(this.world_matrix, [7, 1, 7]);
         mat4.translate(this.world_matrix, this.world_matrix, [-0.5, -2, 0]);
     }
 
