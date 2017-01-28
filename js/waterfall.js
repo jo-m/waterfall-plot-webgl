@@ -192,11 +192,13 @@ class Waterfall {
     }
 
     resize_canvas(event) {
-        if (this.canvas.width != this.canvas.clientWidth ||
-            this.canvas.height != this.canvas.clientHeight) {
+        let ratio = window.devicePixelRatio || 1;
 
-            this.canvas.width = this.canvas.clientWidth;
-            this.canvas.height = this.canvas.clientHeight;
+        if (this.canvas.width != this.canvas.clientWidth * ratio ||
+            this.canvas.height != this.canvas.clientHeight * ratio) {
+
+            this.canvas.width = this.canvas.clientWidth * ratio;
+            this.canvas.height = this.canvas.clientHeight * ratio;
 
             this.parameters.screen_width = this.canvas.width;
             this.parameters.screen_height = this.canvas.height;
