@@ -1,8 +1,17 @@
-# Waterfall plot in Javascript 3D - WebGL version
-Implements a moving [Waterfall Plot](https://en.wikipedia.org/wiki/Waterfall_plot) using raw WebGL and web audio. Currently works in Firefox and Chrome.
+# Waterfall plot in Javascript 3D - Raw WebGL version
 
-[Demo](https://jo-m.ch/repos/waterfall-plot-webgl/)
+A moving [Waterfall Plot](https://en.wikipedia.org/wiki/Waterfall_plot) using raw WebGL and web audio.
 
-Press `zxcvb` for some color presets.
+![Demo](demo.gif)
 
-Use `q` for enabling/disabling lines, and `wertyu` for changing the line color. Use `a` for enabling/disabling the stripes, and `sdfghj` for changing their color.
+Live Demo: <https://jo-m.ch/repos/waterfall-plot-webgl/>
+
+Controls:
+
+- `zxcvb` for some color presets
+- `q` to toggle lines
+- `wertyu` changes the line color
+- `a` to toggle solid coloring
+- `sdfghj` to change solid color
+
+There also is a ThreeJS version: <https://github.com/jo-m/waterfall-plot>.
